@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  phone     String?
+  bio       String?
+  avatar    String?
+  createdAt DateTime @default(now())
+
+  jobs          Job[]
+  messagesSent  Message[] @relation("sender")
+  messagesRecv  Message[] @relation("receiver")
+  reviewsGiven  Review[]  @relation("reviewer")
+  reviewsRecv   Review[]  @relation("reviewee")
+  statuses      Status[]
+  statusLikes   StatusLike[]
+  statusComments StatusComment[]
+}
+
+model Job {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  details     String?
+  price       Float
+  location    String
+  category    String?
+  imageUrl    String?
+  rating      Float    @default(0)
+  ratingCount Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+
+  messages    Message[]
+  reviews     Review[]
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  text      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  senderId  Int
+  sender    User     @relation("sender", fields: [senderId], references: [id])
+  receiverId Int
+  receiver  User     @relation("receiver", fields: [receiverId], references: [id])
+  jobId     Int?
+  job       Job?     @relation(fields: [jobId], references: [id])
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  reviewerId Int
+  reviewer   User     @relation("reviewer", fields: [reviewerId], references: [id])
+  revieweeId Int
+  reviewee   User     @relation("reviewee", fields: [revieweeId], references: [id])
+  jobId      Int?
+  job        Job?     @relation(fields: [jobId], references: [id])
+}
+
+model Status {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+
+  userId   Int
+  user     User       @relation(fields: [userId], references: [id])
+  likes    StatusLike[]
+  comments StatusComment[]
+}
+
+model StatusLike {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  userId   Int
+  user     User   @relation(fields: [userId], references: [id])
+  statusId Int
+  status   Status @relation(fields: [statusId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, statusId])
+}
+
+model StatusComment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+
+  userId   Int
+  user     User   @relation(fields: [userId], references: [id])
+  statusId Int
+  status   Status @relation(fields: [statusId], references: [id], onDelete: Cascade)
+}
