@@ -7,27 +7,26 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  phone     String?
-  bio       String?
-  avatar    String?
-  createdAt DateTime @default(now())
-
-  jobs          Job[]
-  messagesSent  Message[] @relation("sender")
-  messagesRecv  Message[] @relation("receiver")
-  reviewsGiven  Review[]  @relation("reviewer")
-  reviewsRecv   Review[]  @relation("reviewee")
-  statuses      Status[]
-  statusLikes   StatusLike[]
+  id             Int             @id @default(autoincrement())
+  name           String
+  email          String          @unique
+  password       String
+  phone          String?
+  bio            String?
+  avatar         String?
+  createdAt      DateTime        @default(now())
+  jobs           Job[]
+  messagesRecv   Message[]       @relation("receiver")
+  messagesSent   Message[]       @relation("sender")
+  reviewsRecv    Review[]        @relation("reviewee")
+  reviewsGiven   Review[]        @relation("reviewer")
+  statuses       Status[]
   statusComments StatusComment[]
+  statusLikes    StatusLike[]
 }
 
 model Job {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   title       String
   description String
   details     String?
@@ -35,75 +34,84 @@ model Job {
   location    String
   category    String?
   imageUrl    String?
-  rating      Float    @default(0)
-  ratingCount Int      @default(0)
-  createdAt   DateTime @default(now())
-
+  rating      Float     @default(0)
+  ratingCount Int       @default(0)
+  createdAt   DateTime  @default(now())
   userId      Int
-  user        User     @relation(fields: [userId], references: [id])
-
+  user        User      @relation(fields: [userId], references: [id])
   messages    Message[]
   reviews     Review[]
+
+  @@index([userId], map: "Job_userId_fkey")
 }
 
 model Message {
-  id        Int      @id @default(autoincrement())
-  text      String
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  senderId  Int
-  sender    User     @relation("sender", fields: [senderId], references: [id])
+  id         Int      @id @default(autoincrement())
+  text       String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  senderId   Int
   receiverId Int
-  receiver  User     @relation("receiver", fields: [receiverId], references: [id])
-  jobId     Int?
-  job       Job?     @relation(fields: [jobId], references: [id])
+  jobId      Int?
+  job        Job?     @relation(fields: [jobId], references: [id])
+  receiver   User     @relation("receiver", fields: [receiverId], references: [id])
+  sender     User     @relation("sender", fields: [senderId], references: [id])
+
+  @@index([jobId], map: "Message_jobId_fkey")
+  @@index([receiverId], map: "Message_receiverId_fkey")
+  @@index([senderId], map: "Message_senderId_fkey")
 }
 
 model Review {
-  id        Int      @id @default(autoincrement())
-  rating    Int
-  comment   String?
-  createdAt DateTime @default(now())
-
+  id         Int      @id @default(autoincrement())
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now())
   reviewerId Int
-  reviewer   User     @relation("reviewer", fields: [reviewerId], references: [id])
   revieweeId Int
-  reviewee   User     @relation("reviewee", fields: [revieweeId], references: [id])
   jobId      Int?
   job        Job?     @relation(fields: [jobId], references: [id])
+  reviewee   User     @relation("reviewee", fields: [revieweeId], references: [id])
+  reviewer   User     @relation("reviewer", fields: [reviewerId], references: [id])
+
+  @@index([jobId], map: "Review_jobId_fkey")
+  @@index([revieweeId], map: "Review_revieweeId_fkey")
+  @@index([reviewerId], map: "Review_reviewerId_fkey")
 }
 
 model Status {
-  id        Int      @id @default(autoincrement())
+  id        Int             @id @default(autoincrement())
   content   String
-  createdAt DateTime @default(now())
+  createdAt DateTime        @default(now())
+  userId    Int
+  user      User            @relation(fields: [userId], references: [id])
+  comments  StatusComment[]
+  likes     StatusLike[]
 
-  userId   Int
-  user     User       @relation(fields: [userId], references: [id])
-  likes    StatusLike[]
-  comments StatusComment[]
+  @@index([userId], map: "Status_userId_fkey")
 }
 
 model StatusLike {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
-
-  userId   Int
-  user     User   @relation(fields: [userId], references: [id])
-  statusId Int
-  status   Status @relation(fields: [statusId], references: [id], onDelete: Cascade)
+  userId    Int
+  statusId  Int
+  status    Status   @relation(fields: [statusId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, statusId])
+  @@index([statusId], map: "StatusLike_statusId_fkey")
 }
 
 model StatusComment {
   id        Int      @id @default(autoincrement())
   content   String
   createdAt DateTime @default(now())
+  userId    Int
+  statusId  Int
+  status    Status   @relation(fields: [statusId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
 
-  userId   Int
-  user     User   @relation(fields: [userId], references: [id])
-  statusId Int
-  status   Status @relation(fields: [statusId], references: [id], onDelete: Cascade)
+  @@index([statusId], map: "StatusComment_statusId_fkey")
+  @@index([userId], map: "StatusComment_userId_fkey")
 }
